@@ -25,7 +25,6 @@ This project visualizes COVID-19 impacts in the U.S. for the year 2020 through t
 ## Libraries in Use
 
 - **Mapbox GL JS:** For creating and interacting with the map.
-- **D3.js:** (If used) For data manipulation or adding complex visual elements.
 
 ## Data Sources
 
