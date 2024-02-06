@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>COVID-19 Cases in the U.S. (2020)</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #legend, #info { position: absolute; background: #fff; padding: 10px; border-radius: 3px; }
+        #legend { bottom: 40px; right: 10px; }
+        #info { top: 10px; left: 10px; }
+        .dot { height: 15px; width: 15px; border-radius: 50%; display: inline-block; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="legend"></div>
+<div id="info">
+    <h2>COVID-19 Cases in the U.S. (2020)</h2>
+    <p>This map displays the COVID-19 case counts across U.S. counties in 2020. Click on a county to see more details.</p>
+</div>
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiamFrb2J6aGFvIiwiYSI6ImNpcms2YWsyMzAwMmtmbG5icTFxZ3ZkdncifQ.P9MBej1xacybKcDN_jehvw';
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v10',
+        center: [-98.5795, 39.8283], // Centered over the US
+        zoom: 3
+    });
+
+    map.on('load', function() {
+        map.addSource('covid-counts', {
+            type: 'geojson',
+            data: './assets/us-covid-2020-counts.json'
+        });
+
+        map.addLayer({
+            'id': 'covid-counts-layer',
+            'type': 'circle',
+            'source': 'covid-counts',
+            'paint': {
+                'circle-radius': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'cases'],
+                    1, 4,     
+                    1000, 8,  
+                    5000, 12, 
+                    10000, 16,
+                    25000, 20,
+                    50000, 24,
+                    100000, 28 
+                ],
+                'circle-color': [
+                    'step',
+                    ['get', 'cases'],
+                    '#FFEDA0', 1000,
+                    '#FED976', 5000,
+                    '#FC4E2A', 10000,
+                    '#E31A1C', 25000,
+                    '#BD0026', 50000,
+                    '#800026'
+                ],
+                'circle-opacity': 0.6
+            }
+        });
+
+        // Interactive popup
+        map.on('click', 'covid-counts-layer', function(e) {
+            var coordinates = e.features[0].geometry.coordinates.slice();
+            var description = `<strong>${e.features[0].properties.county}, ${e.features[0].properties.state}</strong><br>Cases: ${e.features[0].properties.cases}<br>Deaths: ${e.features[0].properties.deaths}`;
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(description)
+                .addTo(map);
+        });
+
+        // Change the cursor to a pointer when over the layer.
+        map.on('mouseenter', 'covid-counts-layer', function() {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+
+        // Change back to a pointer when it leaves.
+        map.on('mouseleave', 'covid-counts-layer', function() {
+            map.getCanvas().style.cursor = '';
+        });
+
+        // Add legend
+        var legend = document.getElementById('legend');
+        legend.innerHTML = '<strong>Case Counts</strong><br>' +
+                           '<span class="dot" style="background: #FFEDA0"></span> < 1,000<br>' +
+                           '<span class="dot" style="background: #FED976"></span> < 5,000<br>' +
+                           '<span class="dot" style="background: #FC4E2A"></span> < 10,000<br>' +
+                           '<span class="dot" style="background: #E31A1C"></span> < 25,000<br>' +
+                           '<span class="dot" style="background: #BD0026"></span> < 50,000<br>' +
+                           '<span class="dot" style="background: #800026"></span> >= 50,000<br>';
+    });
+</script>
+</body>
+</html>
