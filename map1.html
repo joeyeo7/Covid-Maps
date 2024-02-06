@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>COVID-19 Case Rates in the U.S. (2020)</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #legend, #info {
+            position: absolute; background: #fff; padding: 10px; border-radius: 3px; text-align: center; font-family: 'Open Sans', sans-serif;
+        }
+        #legend {
+            bottom: 0; right: 0; width: 200px; margin-right: 20px; margin-bottom: 40px;
+        }
+        #info {
+            top: 0; right: 0; width: auto; margin-top: 20px; margin-right: 20px; padding: 10px;
+        }
+        .break { display: flex; justify-content: space-between; align-items: center; }
+        .dot { height: 15px; width: 15px; border-radius: 50%; display: inline-block; }
+        .label { margin-left: 5px; }
+        a { color: black; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="legend"></div>
+<div id="info">
+    <h2>COVID-19 Case Rates in the U.S. (2020)</h2>
+    <p>This map displays the COVID-19 case rates per 1000 residents across U.S. counties in 2020. Click on a county to see more details.</p>
+</div>
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiamFrb2J6aGFvIiwiYSI6ImNpcms2YWsyMzAwMmtmbG5icTFxZ3ZkdncifQ.P9MBej1xacybKcDN_jehvw';
+    let map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v10',
+        zoom: 3,
+        center: [-98.5795, 39.8283]
+    });
+    map.on('load', function() {
+        map.addSource('covid-rates', {
+            type: 'geojson',
+            data: './assets/us-covid-2020-rates.json'
+        });
+
+        map.addLayer({
+            'id': 'covid-rates-layer',
+            'type': 'fill',
+            'source': 'covid-rates',
+            'paint': {
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'cases'],
+                    0, '#f2f0f7',
+                    50, '#dadaeb',
+                    100, '#bcbddc',
+                    500, '#9e9ac8',
+                    1000, '#807dba',
+                    5000, '#6a51a3',
+                    10000, '#54278f',
+                    20000, '#3f007d'
+                ],
+                'fill-opacity': 0.75
+            }
+        });
+
+        map.on('click', 'covid-rates-layer', function(e) {
+            new mapboxgl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML(`<h3>${e.features[0].properties.county}, ${e.features[0].properties.state}</h3><p>Cases: ${e.features[0].properties.cases}<br>Deaths: ${e.features[0].properties.deaths}<br>Case Rate: ${e.features[0].properties.rates} per 1000</p>`)
+                .addTo(map);
+        });
+
+        const legend = document.getElementById('legend');
+        const grades = [0, 50, 100, 500, 1000, 5000, 10000, 20000];
+        let labels = ['<strong>Case Rate per 1000</strong>'];
+
+        grades.forEach((grade, index) => {
+            const color = ['#f2f0f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d'][index];
+            labels.push(
+                `<div class="break"><span class="dot" style="background:${color}"></span><span class="label">${grade}</span></div>`
+            );
+        });
+
+        legend.innerHTML = labels.join('') + '<p style="text-align: right; font-size:10pt">Source: <a href="https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html">The New York Times</a></p>';
+    });
+</script>
+</body>
+</html>
